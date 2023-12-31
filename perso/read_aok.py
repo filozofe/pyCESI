@@ -7,7 +7,8 @@ import re
 from numpy import *
 import operator
 
-odsfile = r"C:\Users\phofmann\Dropbox\private\finances\aok2_2022-11-27.ods"
+#odsfile = r"C:\Users\phofmann\Dropbox\private\finances\aok2_2022-11-27.ods"
+odsfile = r"D:\data\Dropbox\Dropbox\private\finances\aok2_2022-11-27.ods"
 
 # Permanently changes the pandas settings
 pd.set_option('display.max_rows', None)
