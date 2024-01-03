@@ -5,8 +5,8 @@
 # C:\Users\phofmann\AppData\Local\Programs\python\Python311\python.exe -m venv venv
 # .\venv\Scripts\Activate.ps1
 # python.exe -m pip install --upgrade pip
-# pip install babel pandas pywin32 pandastable pretty_html_table tkcalendar openpyxl
-
+# pip install babel pandas pywin32 pandastable pretty_html_table tkcalendar openpyxl numpy
+ 
 
 import codecs
 import babel
