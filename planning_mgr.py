@@ -7,7 +7,7 @@
 # python.exe -m pip install --upgrade pip
 # pip install babel pandas pywin32 pandastable pretty_html_table tkcalendar openpyxl numpy
  
-
+ 
 import codecs
 import babel
 import locale
@@ -18,7 +18,7 @@ from tkinter import *
 import pandas as pd
 import numpy as np
 import win32com.client
-from pandastable import Table, config
+from pandastable import Table, config 
 from pretty_html_table import build_table
 from tkcalendar import Calendar
 
@@ -28,9 +28,8 @@ df = '%a %d/%m/%Y'
 # locale.setlocale(locale.LC_ALL, 'fr')
 
 
-intervenant = 'Pilote'
 
-# promo starts with
+
 recipient = ''
 signature_name = 'new'
 
