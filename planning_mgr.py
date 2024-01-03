@@ -16,6 +16,7 @@ from functools import partial
 from tkinter import *
 
 import pandas as pd
+import numpy as np
 import win32com.client
 from pandastable import Table, config
 from pretty_html_table import build_table
@@ -41,25 +42,6 @@ pd.set_option('display.width', None)
 # promos = ('ASR1 23-24', 'ASR2-FFASR 23-24', 'MAALSI 23-25', 'ASR2-FFASR 24-25')
 
 planning_file = r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\plannings_informatique.xlsx"
-
-# plannings = (
-#     #   r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\14 - ASR 22-23 - TL2XN204\02 - Rythme et Planning\Planning ASR01- 2022-2023.xlsx",
-#     #   r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\15 - ASR_FFASR 22-23 - TL2XN214\02 - Rythme et Planning\Planning ASR02-FFASR - 2022-2023.xlsx",
-#     r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\16 - ASR1 23-24 - TL3XN204\02 - Rythme et Planning\Planning ASR1- 2023-2024.xlsx",
-#     r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\17 - ASR2-FFASR2 23-24 -TL3XN206\02 - Rythme et Planning\Planning ASR2-FFASR - 2023-2024.xlsx",
-#     r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\6 - MAALSI\02 - MAALSI 23-25\02 - Rythme et Planning\PLANNING MAALSI 2023-2025.xlsx",
-#     r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\18 - ASR1 24-25\02 - Rythme et Planning\Planning ASR1 - 2024-2025.xlsx",
-#     r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\19 - ASR2-FFASR2 24-25\02 - Rythme et Planning\Planning ASR2-FFASR - 2024-2025.xlsx"
-#     #   r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\3 - CDA\14 - CDA 23-24 - TL3XN201\02 - Rythme et Planning\PLANNING CDA 2023-2024.xlsm"
-# )
-# plannings = {
-#     'ASR1 23-24': r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\16 - ASR1 23-24 - TL3XN204\02 - Rythme et Planning\Planning ASR1- 2023-2024.xlsx",
-#     'ASR2 23-24': r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\17 - ASR2-FFASR2 23-24 -TL3XN206\02 - Rythme et Planning\Planning ASR2-FFASR - 2023-2024.xlsx",
-#     'MAALSI 23-25': r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\6 - MAALSI\02 - MAALSI 23-25\02 - Rythme et Planning\PLANNING MAALSI 2023-2025.xlsx",
-#     'ASR1 24-25': r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\18 - ASR1 24-25\02 - Rythme et Planning\Planning ASR1 - 2024-2025.xlsx",
-#     'ASR2 24-25': r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\2 - RISR_ASR\19 - ASR2-FFASR2 24-25\02 - Rythme et Planning\Planning ASR2-FFASR - 2024-2025.xlsx"
-#     #   r"\\tldata\utilisateurs\Activité Alternance\Activité informatique\PROMOS\3 - CDA\14 - CDA 23-24 - TL3XN201\02 - Rythme et Planning\PLANNING CDA 2023-2024.xlsm"
-# }
 
 df_plannings = {}
 
@@ -91,7 +73,10 @@ def load_all_plannings():
     plannings = pd.read_excel(planning_file, skiprows=0, header=0)
     for i in range(0, len(plannings)):
         # print("loading " + plannings.iloc[i]['promo'] + ": " + plannings.iloc[i]['fichier'])
-        print("loading " + plannings.iloc[i]['promo'])
+        #print("loading " + plannings.iloc[i]['promo'])
+        statusLabel.config(text="chargement planning " + str(plannings.iloc[i]['promo']) + ": " + str(
+            plannings.iloc[i]['fichier']) + "                                    ")
+        top.update_idletasks()
         if plannings.iloc[i]['HeaderLine'] == 1:
             hl = 1
         else:
@@ -112,13 +97,17 @@ def load_all_plannings():
                 df2 = df2.assign(Confirmation='')
             del df1
             df2['Promo'] = plannings.iloc[i]['promo']
-            df2.fillna('', inplace=True)
+            df2['Pilote'] = plannings.iloc[i]['pilote']
+            df2.replace(np.nan, '', inplace=True)
             df2 = df2[df2['Réf.'] != '']
             #    print(df_all_plannings[df_all_plannings['Intervenants'] == 'FOLIO Brice'])
             df2['Jour'] = df2['Date'].dt.strftime('%a %d/%m/%Y')
             df2.sort_values('Date')
             df2.reset_index(inplace=True, drop=True)
             df_plannings[plannings.iloc[i]['promo']] = df2
+    top.update_idletasks()
+    statusLabel.config(text=str(len(plannings)) + " plannings chargés ")
+    top.update_idletasks()
     return
 
 
@@ -133,6 +122,14 @@ def get_intervenants():
     return l
 
 
+def get_pilotes():
+    pilotes = set()
+    for df in df_plannings.values():
+        pilotes = pilotes.union(set(df['Pilote'].tolist()))
+    #print(pilotes)
+    return pilotes
+
+
 def filter_plannings(frame):
     global df_filtered_plannings
     result_df = pd.DataFrame()
@@ -143,12 +140,17 @@ def filter_plannings(frame):
     # print("date ", filter_param['date'])
     # print("promos", filter_param['promos'])
     # print('intervenant', filter_param['intervenant'])
+    #construire la liste de filtrage des pilotes
+    pilotes = []
+    for key, values in filter_param['pilote'].items():
+        if values:
+            pilotes.append(key)
     for p, df in df_plannings.items():
         if filter_param['promos'][p] == True:
             df_filtered_plannings = df_filtered_plannings._append(df.loc[
                                                                       (df['Intervenants'].str.contains(
                                                                           filter_param['intervenant'])) &
-                                                                      # (df_all_plannings['Promo'].str.contains(dict['promo'])) &
+                                                                      (df['Pilote'].isin(pilotes)) &
                                                                       (df['Date'] > pd.to_datetime(filter_param['date'],
                                                                                                    dayfirst=True))
                                                                       ])
@@ -156,8 +158,8 @@ def filter_plannings(frame):
     df_filtered_plannings.reset_index(inplace=True, drop=True)
     pt = Table(frame,
                dataframe=df_filtered_plannings[
-                   ['Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
-               showtoolbar=True, showstatusbar=True)
+                   ['Pilote', 'Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
+               showtoolbar=False, showstatusbar=True)
     # set some options
     options = {'colheadercolor': 'blue', 'floatprecision': 1, 'fontsize': 8, 'cellwidth': 40}
     config.apply_options(options, pt)
@@ -182,23 +184,7 @@ def find_collision(frame):
     global df_filtered_plannings
     result_df = pd.DataFrame()
 
-    # delete all rows
-    df_filtered_plannings = df_filtered_plannings.head(0)
-
-    # print("date ", filter_param['date'])
-    # print("promos", filter_param['promos'])
-    # print('intervenant', filter_param['intervenant'])
-    for p, df in df_plannings.items():
-        if filter_param['promos'][p] == True:
-            df_filtered_plannings = df_filtered_plannings._append(df.loc[
-                                                                      (df['Intervenants'].str.contains(
-                                                                          filter_param['intervenant'])) &
-                                                                      # (df_all_plannings['Promo'].str.contains(dict['promo'])) &
-                                                                      (df['Date'] > pd.to_datetime(filter_param['date'],
-                                                                                                   dayfirst=True))
-                                                                      ])
-    df_filtered_plannings.sort_values('Date')
-    df_filtered_plannings.reset_index(inplace=True, drop=True)
+    filter_plannings(frame)
 
     df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants', 'AM-PM'],
                                                                           keep=False)
@@ -304,12 +290,12 @@ def prepare_email():
 
 
 ################################
-def call_filter_planning(frame, cal, ie):
+def call_filter_planning(frame):
     date = date = cal.get_date()
     if date == '':
         date = today
     filter_param['date'] = date
-    filter_param['intervenant'] = ie.get()
+    filter_param['intervenant'] = intervenantVar.get()
     # set all promo to false
     for p in filter_param['promos'].keys():
         filter_param['promos'][p] = False
@@ -317,19 +303,26 @@ def call_filter_planning(frame, cal, ie):
         # print(promoListbox.get(i))
         filter_param['promos'][promoListbox.get(i)] = True
 
+    for p in filter_param['pilote'].keys():
+        filter_param['pilote'][p] = False
+    for i in piloteListbox.curselection():
+        # print(promoListbox.get(i))
+        filter_param['pilote'][piloteListbox.get(i)] = True
+
+    displayFilterParam()
     filter_plannings(frame)
     statusLabel.config(text=str(df_filtered_plannings.shape[0]) + " lignes selectionnées")
     # display_plannings()
     return
 
-
+"""
 def get_start_date(*args, frame, d, p, i):  # triggered on Button Click
     #   print("date: {}".format(d.get()))
     #   print("promo: {}".format(p.get()))
     #   print("intervenant: {}".format(i.get()))
     date = cal.get_date()  # read and display date
     # print(date)
-    date = (d.get())
+    #date = (d.get())
     if date == '':
         date = today
     filter_param['date'] = date
@@ -340,44 +333,67 @@ def get_start_date(*args, frame, d, p, i):  # triggered on Button Click
     for i in promoListbox.curselection():
         # print(promoListbox.get(i))
         filter_param['promos'][promoListbox.get(i)] = True
+    displayFilterParam()
     filter_plannings(frame)
     statusLabel.config(text=str(df_filtered_plannings.shape[0]) + " lignes selectionnées")
     # label_result.config(text="Result = %d" % result)
     # display_plannings()
     # del pt
     return
-
+"""
 
 ################# main
 filter_param = {
     'date': Calendar.date.today().strftime("%d/%m/%y"),
     'promos': {},
-    'intervenant': ''
+    'intervenant': '',
+    'pilote': {}
 }
+
+
+# display les paramettres de filtre
+def displayFilterParam():
+    string = str()
+    string = "Date début: " + filter_param['date'] + '\n'
+    string = string + "Intervenant: " + filter_param['intervenant'] + '\n'
+    string = string + "Pilote: "
+    for key, value in filter_param['pilote'].items():
+        if value:
+            string = string + key + ", "
+    string = string + "\nPromos: "
+    for key, value in filter_param['promos'].items():
+        if value:
+            string = string + key + " "
+    filter_param_text.set(string)
+
 
 top = Tk()
 top.title("gestion plannings")
 top.geometry("1200x800")
-f1 = Frame(top, height=300)  # for the buttons and the entries
+# f1 en haut : les commandes
+# f2 bas droite: la table
+# f3: a gauche: la liste des promos
+f1 = Frame(top, height=220)  # for the buttons and the entries
 f1.pack(fill='both', side=TOP)
-f2 = Frame(top)  # for the tables
-f2.pack(fill='both', side=BOTTOM)
+f4 = Frame(top, height=20)  # pour les status
+f4.pack(fill='x', side=BOTTOM)
+f3 = Frame(top, width=110)  # pour la liste des promos
+f3.pack(fill='y', side=LEFT)
+f2 = Frame(top, width=1090, height=560)  # for the tables
+f2.pack(fill='both', expand=True)
 
-# promoLabel = Label(f1, text="Promo contient")
-# promoLabel.place(x=1, y=40)
 intervenantLabel = Label(f1, text="Intervenant")
 intervenantLabel.place(x=1, y=10)
 intervenantVar = StringVar()
 intervenantEntry = Entry(f1, textvariable=intervenantVar)
 intervenantEntry.place(x=80, y=10)
 
-statusLabel = Label(f1, text="starting")
-statusLabel.place(x=1, y=280)
+statusLabel = Label(f4, text="starting")
+statusLabel.place(x=1, y=0)
 
 start_date = StringVar(f1, Calendar.date.today().strftime("%d/%m/%y"))
 
-calendarLabel = Label(f1, text="Date début")
-calendarLabel.place(x=400, y=0)
+Label(f1, text="Date début").place(x=400, y=0)
 cal = Calendar(f1,
                selectmode='day',
                date_pattern='dd/mm/yyyy',
@@ -386,31 +402,27 @@ cal = Calendar(f1,
                # start_date=Calendar.date.today().strftime("%d/%m/%y"),
                textvariable=start_date)
 cal.place(x=400, y=20)
-start_date.trace('w', lambda *_, f=f2, d=start_date, i=intervenantVar: get_start_date(*_, frame=f, d=d, p=p,
-                                                                                      i=i))
+#start_date.trace('w', lambda *_, f=f2, d=start_date, i=intervenantVar: get_start_date(*_, frame=f, d=d, p=p, i=i))
 
-f1.pack(fill='both', side=TOP)
+start_date.trace('w', lambda *_, f=f2 : call_filter_planning(f))
 
-# print("start loading plannings")
-load_all_plannings()
-# print("plannings loaded")
-# print_planning(df_all_plannings)
+Label(f1, text="filtre").place(x=670, y=0)
+filter_param_text = StringVar()
+filter_param_text.set("Filtre")
+filterParamLabel = Label(f1, textvariable=filter_param_text, anchor=W, justify=LEFT, wraplength=500)
+filterParamLabel.place(x=670, y=20)
+intervenantEntry.bind("<Return>", lambda e: call_filter_planning(f2))
 
-intervenantEntry.bind("<Return>", lambda e: call_filter_planning(f2, cal, intervenantEntry))
+promoLabel = Label(f3, text="Promotions")
+promoLabel.place(x=10, y=0)
+promoListbox = Listbox(f3, height=len(df_plannings), width=15, selectmode=MULTIPLE, exportselection=False)
+promoListbox.place(x=0, y=20)
+promoListbox.bind('<<ListboxSelect>>', lambda e: call_filter_planning(f2))
 
-promoLabel = Label(f1, text="Promotions")
-promoLabel.place(x=250, y=0)
-promoListbox = Listbox(f1, height=len(df_plannings), width=20, selectmode=MULTIPLE)
-promoListbox.place(x=250, y=20)
-promoListbox.bind('<<ListboxSelect>>', lambda e: call_filter_planning(f2, cal, intervenantEntry))
-
-i = 0
-for p in df_plannings.keys():
-    promoListbox.insert(i + 1, p)
-    filter_param['promos'][p] = True
-    i = i + 1
-
-f1.pack(fill='both', side=TOP)
+Label(f1, text="Pilotes").place(x=250, y=0)
+piloteListbox = Listbox(f1, width=15, selectmode=MULTIPLE, exportselection=False)
+piloteListbox.place(x=250, y=20)
+piloteListbox.bind('<<ListboxSelect>>', lambda e: call_filter_planning(f2))
 
 c1 = partial(call_filter_planning, f2, cal, intervenantEntry)
 filterButton = Button(f1, text="filtrer plannings", activebackground='green', command=c1)
@@ -436,9 +448,32 @@ c6 = partial(promoListbox.select_clear, 0, END)
 deSelectAllPromoButton = Button(f1, text="deselect. tte promos", command=c6)
 deSelectAllPromoButton.place(x=120, y=100)
 
-promoListbox.select_set(0, END)
-filter_plannings(f2)
-statusLabel.config(text=str(df_filtered_plannings.shape[0]) + " lignes selectionnées")
-get_intervenants()
 
+def load():
+    load_all_plannings()
+
+    # load promo list box
+    i = 0
+    for p in df_plannings.keys():
+        promoListbox.insert(i + 1, p)
+        filter_param['promos'][p] = True
+        i = i + 1
+    promoListbox.select_set(0, END)
+
+    # load pilote listbox
+    i = 0
+    pilotes = get_pilotes()
+    for p in pilotes:
+        piloteListbox.insert(i + 1, p)
+        filter_param['pilote'][p] = True
+        i = i + 1
+    piloteListbox.select_set(0, END)
+
+    filter_plannings(f2)
+    statusLabel.config(text=str(df_filtered_plannings.shape[0]) + " lignes selectionnées")
+    get_intervenants()
+    displayFilterParam()
+
+
+top.after(1000, load)
 top.mainloop()
