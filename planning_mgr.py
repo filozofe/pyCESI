@@ -367,7 +367,7 @@ def displayFilterParam():
 
 
 top = Tk()
-top.title("gestion plannings")
+top.title("gestion plannings v1 4/1/2024")
 top.geometry("1200x800")
 # f1 en haut : les commandes
 # f2 bas droite: la table
