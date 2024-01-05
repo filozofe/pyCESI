@@ -16,7 +16,8 @@ import cv2 as cv
 import datetime
 
 
-cap = cv.VideoCapture(0)
+#cap = cv.VideoCapture(0)
+cap = cv.VideoCapture('http://192.168.1.18:4747/mjpegfeed?640x480')
 fps = cap.get(cv.CAP_PROP_FPS)
 width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
 height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
