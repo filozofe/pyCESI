@@ -112,7 +112,8 @@ def catgoriseNB(newLibelle,categorieListDict,probDict,vocabulaire):
     for key,value in probDict.items():
         outputDict[key]=sum(array(probDict[key])*vecData)+log(categorieListDict[key])
     outputDictSorted=sorted(outputDict.items(),key=operator.itemgetter(1), reverse=True)
-    print (outputDictSorted)
+    #for i in range(0,4):
+        #print (outputDictSorted[i][0],' ',"%.1f" % outputDictSorted[i][1], end='|')
     return outputDictSorted[0][0]
 
 
@@ -128,5 +129,11 @@ categorieListDict, probDict= trainNB0(trainMat,categorie)
 print ("done")
 
 
+""" for i in a_categoriser:
+    print (f"{i:<50}",end=':\t')
+    category=catgoriseNB(i,categorieListDict,probDict,vocabulaire)
+    print() """
+
 for i in a_categoriser:
-    print(i," ", catgoriseNB(i,categorieListDict,probDict,vocabulaire))
+    category=catgoriseNB(i,categorieListDict,probDict,vocabulaire)
+    print(category)
