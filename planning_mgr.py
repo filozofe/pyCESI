@@ -150,7 +150,7 @@ def filter_plannings(frame):
                                                                       (df['Intervenants'].str.contains(
                                                                           filter_param['intervenant'])) &
                                                                       (df['Pilote'].isin(pilotes)) &
-                                                                      (df['Date'] > pd.to_datetime(filter_param['date'],
+                                                                      (df['Date'] >= pd.to_datetime(filter_param['date'],
                                                                                                    dayfirst=True))
                                                                       ])
     df_filtered_plannings.sort_values('Date', inplace=True)
@@ -196,7 +196,7 @@ def find_collision(frame):
 
     pt = Table(frame,
                dataframe=df_filtered_plannings[
-                   ['Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
+                   ['Pilote','Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
                showtoolbar=True, showstatusbar=True)
     # set some options
     options = {'colheadercolor': 'blue', 'floatprecision': 1, 'fontsize': 8, 'cellwidth': 40}
