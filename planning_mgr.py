@@ -102,6 +102,10 @@ def load_all_plannings():
             df2 = df2[df2['Réf.'] != '']
             #    print(df_all_plannings[df_all_plannings['Intervenants'] == 'FOLIO Brice'])
             df2['Jour'] = df2['Date'].dt.strftime('%a %d/%m/%Y')
+            df2.rename({'AM-PM':'AM_PM'},inplace=True,axis='columns')         #remplace AM-PM par AM_PM
+            #normalisation des demies journées
+            df2.replace(['AM','am','matin','Matin'],'matin',inplace=True)
+            df2.replace(['pm','PM','aprem','Aprem'],'aprem',inplace=True)
             df2.sort_values('Date')
             df2.reset_index(inplace=True, drop=True)
             df_plannings[plannings.iloc[i]['promo']] = df2
@@ -154,11 +158,21 @@ def filter_plannings(frame):
                                                                       (df['Date'] >= pd.to_datetime(filter_param['date'],
                                                                                                    dayfirst=True))
                                                                       ])
+    if filter_param['confirmé'] == validationFilterOptions[1]:
+        #que les confimé
+        #df_filtered_plannings=df_filtered_plannings.drop[df_filtered_plannings[df_filtered_plannings['Confirmation']!=''].index]
+        df_filtered_plannings=df_filtered_plannings[df_filtered_plannings.Confirmation != '']
+    elif filter_param['confirmé'] == validationFilterOptions[2]:
+        #que les non confirmé
+        #df_filtered_plannings=df_filtered_plannings.drop[df_filtered_plannings[df_filtered_plannings['Confirmation']==''].index]
+        df_filtered_plannings=df_filtered_plannings[df_filtered_plannings.Confirmation == '']
+    else:
+        pass
     df_filtered_plannings.sort_values('Date', inplace=True)
     df_filtered_plannings.reset_index(inplace=True, drop=True)
     pt = Table(frame,
                dataframe=df_filtered_plannings[
-                   ['Pilote', 'Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
+                   ['Pilote', 'Jour', 'AM_PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
                showtoolbar=False, showstatusbar=True)
     # set some options
     options = {'colheadercolor': 'blue', 'floatprecision': 1, 'fontsize': 8, 'cellwidth': 40}
@@ -186,7 +200,7 @@ def find_collision(frame):
 
     filter_plannings(frame)
 
-    df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants', 'AM-PM'],
+    df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants', 'AM_PM'],
                                                                           keep=False)
     df_filtered_plannings = df_filtered_plannings[df_filtered_plannings.collision == True]
     # remove from duplicate the following 'Intervenants'
@@ -197,7 +211,7 @@ def find_collision(frame):
 
     pt = Table(frame,
                dataframe=df_filtered_plannings[
-                   ['Pilote','Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
+                   ['Pilote','Jour', 'AM_PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
                showtoolbar=True, showstatusbar=True)
     # set some options
     options = {'colheadercolor': 'blue', 'floatprecision': 1, 'fontsize': 8, 'cellwidth': 40}
@@ -244,7 +258,7 @@ def print_planning(p):
     with pd.option_context('display.colheader_justify', 'left', 'display.max_columns', None, 'display.width', None,
                            'display.float_format', "{:.2f}  ".format):
         print(
-            p[['Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']].to_string(
+            p[['Jour', 'AM_PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']].to_string(
                 index=False,
                 justify='left'))
 
@@ -252,7 +266,7 @@ def print_planning(p):
 def display_plannings():
     ### https://pypi.org/project/pretty-html-table/
     html_beautiful_table = build_table(
-        df_filtered_plannings[['Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module']],
+        df_filtered_plannings[['Jour', 'AM_PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module']],
         'blue_light',
         font_family='Open Sans , sans-serif',
         font_size='12px',
@@ -276,7 +290,7 @@ def prepare_email():
     newmail.BodyFormat = 3  # olFormatHTML https://msdn.microsoft.com/en-us/library/office/aa219371(v=office.11).aspx
     ### https://pypi.org/project/pretty-html-table/
     html_beautiful_table = build_table(
-        df_filtered_plannings[['Jour', 'AM-PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module']],
+        df_filtered_plannings[['Jour', 'AM_PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module']],
         'blue_light',
         font_family='Open Sans , sans-serif',
         font_size='12px',
@@ -295,6 +309,7 @@ def call_filter_planning(frame):
     if date == '':
         date = today
     filter_param['date'] = date
+    filter_param['confirmé'] = selectedOption.get()
     filter_param['intervenant'] = intervenantVar.get()
     # set all promo to false
     for p in filter_param['promos'].keys():
@@ -311,50 +326,31 @@ def call_filter_planning(frame):
 
     displayFilterParam()
     filter_plannings(frame)
+    print( df_filtered_plannings.info())
     statusLabel.config(text=str(df_filtered_plannings.shape[0]) + " lignes selectionnées")
     # display_plannings()
     return
 
-"""
-def get_start_date(*args, frame, d, p, i):  # triggered on Button Click
-    #   print("date: {}".format(d.get()))
-    #   print("promo: {}".format(p.get()))
-    #   print("intervenant: {}".format(i.get()))
-    date = cal.get_date()  # read and display date
-    # print(date)
-    #date = (d.get())
-    if date == '':
-        date = today
-    filter_param['date'] = date
-    filter_param['intervenant'] = i.get()
-    # set all promo to false
-    for p in filter_param['promos'].keys():
-        filter_param['promos'][p] = False
-    for i in promoListbox.curselection():
-        # print(promoListbox.get(i))
-        filter_param['promos'][promoListbox.get(i)] = True
-    displayFilterParam()
-    filter_plannings(frame)
-    statusLabel.config(text=str(df_filtered_plannings.shape[0]) + " lignes selectionnées")
-    # label_result.config(text="Result = %d" % result)
-    # display_plannings()
-    # del pt
-    return
-"""
+validationFilterOptions = ["confirmé et non confirmé","confirmé","non confirmé"]
 
 ################# main
 filter_param = {
     'date': Calendar.date.today().strftime("%d/%m/%y"),
     'promos': {},
     'intervenant': '',
-    'pilote': {}
+    'pilote': {},
+    'confirmé': "tous"         #si False on ne filtre pas le entrees qui on un valeur dans la colonne validation
 }
+
+
+
 
 
 # display les paramettres de filtre
 def displayFilterParam():
     string = str()
     string = "Date début: " + filter_param['date'] + '\n'
+    string = string + "confirmé: " + filter_param['confirmé'] + '\n'
     string = string + "Intervenant: " + filter_param['intervenant'] + '\n'
     string = string + "Pilote: "
     for key, value in filter_param['pilote'].items():
@@ -424,7 +420,7 @@ piloteListbox = Listbox(f1, width=15, selectmode=MULTIPLE, exportselection=False
 piloteListbox.place(x=250, y=20)
 piloteListbox.bind('<<ListboxSelect>>', lambda e: call_filter_planning(f2))
 
-c1 = partial(call_filter_planning, f2, cal, intervenantEntry)
+c1 = partial(call_filter_planning, f2)
 filterButton = Button(f1, text="filtrer plannings", activebackground='green', command=c1)
 filterButton.place(x=0, y=40)
 
@@ -447,6 +443,17 @@ selectAllPromoButton.place(x=0, y=100)
 c6 = partial(promoListbox.select_clear, 0, END)
 deSelectAllPromoButton = Button(f1, text="deselect. tte promos", command=c6)
 deSelectAllPromoButton.place(x=120, y=100)
+
+selectedOption=StringVar()
+r1=Radiobutton(f1,text=validationFilterOptions[0],value=validationFilterOptions[0], variable=selectedOption,command=c1)
+r2=Radiobutton(f1,text=validationFilterOptions[1],value=validationFilterOptions[1], variable=selectedOption,command=c1)
+r3=Radiobutton(f1,text=validationFilterOptions[2],value=validationFilterOptions[2], variable=selectedOption,command=c1)
+r1.place(x=0, y=130)
+r2.place(x=0, y=150)
+r3.place(x=0, y=170)
+selectedOption.set(validationFilterOptions[0])
+
+
 
 
 def load():
