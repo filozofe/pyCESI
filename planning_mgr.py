@@ -106,6 +106,10 @@ def load_all_plannings():
             #normalisation des demies journées
             df2.replace(['AM','am','matin','Matin'],'matin',inplace=True)
             df2.replace(['pm','PM','aprem','Aprem'],'aprem',inplace=True)
+            #cast to correct types
+            #df2 = df2.astype({'Charge': 'float'}).dtypes
+            #remove leading and trailing spaces
+            df2['Intervenants']=df2['Intervenants'].apply(lambda x: x.strip())
             df2.sort_values('Date')
             df2.reset_index(inplace=True, drop=True)
             df_plannings[plannings.iloc[i]['promo']] = df2
@@ -115,15 +119,32 @@ def load_all_plannings():
     return
 
 
-def get_intervenants():
-    l = []
+
+#pivot table avec les intervenants et les noms de promo
+def get_intervenants2(frame):
+    result_df = pd.DataFrame(columns=['Intervenants', 'Pilote'])
+    
     for df in df_plannings.values():
-        l.extend(df['Intervenants'].tolist())
-    # l = list(dict.fromkeys(l))  # remove duplicates
-    l = list(set(l))
-    l.sort()
-    # print(l)
-    return l
+        result_df = result_df._append(df[['Intervenants','Pilote']])
+    result_df.sort_values('Intervenants')
+
+    pivot_df=pd.pivot_table(result_df,values='Pilote',index=['Intervenants'],columns=['Pilote'],aggfunc=len,fill_value='')
+    pivot_df['Intervenant']=pivot_df.index
+    cols = pivot_df.columns.tolist()
+    cols = cols[-1:] + cols[:-1]
+    pivot_df=pivot_df[cols]
+    pt = Table(frame,
+               dataframe=pivot_df,
+               showtoolbar=True, showstatusbar=True)
+    print(pivot_df.head())
+    # set some options
+    options = {'colheadercolor': 'blue', 'floatprecision': 1, 'fontsize': 8, 'cellwidth': 60}
+    config.apply_options(options, pt)
+    top.update_idletasks()
+    pt.show()
+    top.update_idletasks()
+    return
+
 
 
 def get_pilotes():
@@ -200,8 +221,9 @@ def find_collision(frame):
 
     filter_plannings(frame)
 
-    df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants', 'AM_PM'],
-                                                                          keep=False)
+    df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants', 'AM_PM'],keep=False)
+    #df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants'],keep=False)
+                                                                          
     df_filtered_plannings = df_filtered_plannings[df_filtered_plannings.collision == True]
     # remove from duplicate the following 'Intervenants'
     exclude = ['', '?', 'Pilote', 'pilote', 'Autonomie']
@@ -448,11 +470,14 @@ selectedOption=StringVar()
 r1=Radiobutton(f1,text=validationFilterOptions[0],value=validationFilterOptions[0], variable=selectedOption,command=c1)
 r2=Radiobutton(f1,text=validationFilterOptions[1],value=validationFilterOptions[1], variable=selectedOption,command=c1)
 r3=Radiobutton(f1,text=validationFilterOptions[2],value=validationFilterOptions[2], variable=selectedOption,command=c1)
-r1.place(x=0, y=130)
-r2.place(x=0, y=150)
-r3.place(x=0, y=170)
+r1.place(x=0, y=160)
+r2.place(x=0, y=180)
+r3.place(x=0, y=200)
 selectedOption.set(validationFilterOptions[0])
 
+c7 = partial(get_intervenants2, f2)
+showIntervenantButton=Button(f1, text="lister Intervenants", command=c7)
+showIntervenantButton.place(x=0,y=130)
 
 
 
@@ -478,7 +503,6 @@ def load():
 
     filter_plannings(f2)
     statusLabel.config(text=str(df_filtered_plannings.shape[0]) + " lignes selectionnées")
-    get_intervenants()
     displayFilterParam()
 
 
