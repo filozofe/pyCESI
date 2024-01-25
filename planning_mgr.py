@@ -7,7 +7,9 @@
 # python.exe -m pip install --upgrade pip
 # pip install babel pandas pywin32 pandastable pretty_html_table tkcalendar openpyxl numpy
  
- 
+
+titre = "gestion plannings v1.1 25/1/2024"
+
 import codecs
 import babel
 import locale
@@ -136,13 +138,14 @@ def get_intervenants2(frame):
     pt = Table(frame,
                dataframe=pivot_df,
                showtoolbar=True, showstatusbar=True)
-    print(pivot_df.head())
     # set some options
     options = {'colheadercolor': 'blue', 'floatprecision': 1, 'fontsize': 8, 'cellwidth': 60}
     config.apply_options(options, pt)
     top.update_idletasks()
     pt.show()
+    top.update()
     top.update_idletasks()
+    pt.redraw()
     return
 
 
@@ -204,6 +207,7 @@ def filter_plannings(frame):
     # mask_1 = pt.model.df['Confirmation'] != ''
     # pt.setColorByMask('Confirmation', mask_1, 'red')
     df_filtered_plannings.reset_index(inplace=True, drop=True)
+    
 
     r = ()
     r = df_filtered_plannings.index[df_filtered_plannings['Confirmation'] == ''].tolist()
@@ -386,7 +390,7 @@ def displayFilterParam():
 
 
 top = Tk()
-top.title("gestion plannings v1 4/1/2024")
+top.title(titre)
 top.geometry("1200x800")
 # f1 en haut : les commandes
 # f2 bas droite: la table
