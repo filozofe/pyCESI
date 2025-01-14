@@ -1,4 +1,3 @@
-# last update: 13/01/2025
 # doc: https://pythonhosted.org/xlrd3/
 # pip install babel pandas tkinter pywin32 pandastable pretty_html_table tkcalendar
 # installer Python pour Windows 64bits: https://www.python.org/downloads/
@@ -8,11 +7,8 @@
 # python.exe -m pip install --upgrade pip
 # pip install babel pandas pywin32 pandastable pretty_html_table tkcalendar openpyxl numpy
  
- #fuzzy string
-# https://www.datacamp.com/tutorial/fuzzy-string-python
-# pip install thefuzz
 
-titre = "gestion plannings v1.2 béta 25/1/2024"
+titre = "gestion plannings v1.1 25/1/2024"
 
 import codecs
 import babel
@@ -20,9 +16,6 @@ import locale
 import os
 from functools import partial
 from tkinter import *
-from thefuzz import process,fuzz
-
-import warnings
 
 
 import pandas as pd
@@ -79,10 +72,9 @@ def load_all_plannings():
     global df_plannings
 
     # lire fichier xls contenant le nom des promos et le path des fichiers plannings
-    warnings.simplefilter(action='ignore', category=UserWarning)
     plannings = pd.read_excel(planning_file, skiprows=0, header=0)
     for i in range(0, len(plannings)):
-        print("loading " + plannings.iloc[i]['promo'] + ": " + plannings.iloc[i]['fichier'])
+        # print("loading " + plannings.iloc[i]['promo'] + ": " + plannings.iloc[i]['fichier'])
         #print("loading " + plannings.iloc[i]['promo'])
         statusLabel.config(text="chargement planning " + str(plannings.iloc[i]['promo']) + ": " + str(
             plannings.iloc[i]['fichier']) + "                                    ")
@@ -143,19 +135,6 @@ def get_intervenants2(frame):
     cols = pivot_df.columns.tolist()
     cols = cols[-1:] + cols[:-1]
     pivot_df=pivot_df[cols]
-    #score similarities
-    for i in pivot_df['Intervenant']:
-        ilist= pivot_df.Intervenant.values.tolist()
-        ilist.remove(i)     # avoid autodetecting itself     
-        output=[]
-        for t in process.extract(i, ilist, scorer=fuzz.token_set_ratio,limit=10):        #output contient une liste de tuple ()'intervenant',score)
-            if t[1] > 80:   #score superieur a 80% 
-                output.append(t)
-        print(i,":",output)
-        if i!= '':
-            pivot_df.at[i,'nb_similarités']=len(output)
-            pivot_df.at[i,'similarités']=str(output).strip('[]')
-            
     pt = Table(frame,
                dataframe=pivot_df,
                showtoolbar=True, showstatusbar=True)
@@ -285,8 +264,8 @@ def find_collision(frame):
 def load_signature(signature_name):
     global signature_code
 
-    sig_files_path = "AppData/Roaming/Microsoft/Signatures/" + signature_name + "_fichiers/"
-    sig_html_path = "AppData/Roaming/Microsoft/Signatures/" + signature_name + '.htm'
+    sig_files_path = 'AppData\Roaming\Microsoft\Signatures\\' + signature_name + '_fichiers\\'
+    sig_html_path = 'AppData\Roaming\Microsoft\Signatures\\' + signature_name + '.htm'
     signature_path = os.path.join((os.environ['USERPROFILE']),
                                   sig_files_path)  # Finds the path to Outlook signature files with signature name "Work"
     html_doc = os.path.join((os.environ['USERPROFILE']),
