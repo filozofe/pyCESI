@@ -12,7 +12,7 @@
 # https://www.datacamp.com/tutorial/fuzzy-string-python
 # pip install thefuzz
 
-titre = "gestion plannings v1.2 béta 25/1/2024"
+titre = "gestion plannings v1.2  03/04/2025 ---- sans signature dans les emails"
 
 import codecs
 import babel
@@ -114,8 +114,11 @@ def load_all_plannings():
             df2['Jour'] = df2['Date'].dt.strftime('%a %d/%m/%Y')
             df2.rename({'AM-PM':'AM_PM'},inplace=True,axis='columns')         #remplace AM-PM par AM_PM
             #normalisation des demies journées
-            df2.replace(['AM','am','matin','Matin'],'matin',inplace=True)
-            df2.replace(['pm','PM','aprem','Aprem'],'aprem',inplace=True)
+            df2['AM_PM']=df2['AM_PM'].replace(['AM','am','matin','Matin'],'matin')
+            df2['AM_PM']=df2['AM_PM'].replace(['pm','PM','aprem','Aprem'],'aprem')
+            df2['AM_PM']=df2['AM_PM'].replace('','journée')
+            #df2.replace(['AM','am','matin','Matin'],'matin',inplace=True)
+            #df2.replace(['pm','PM','aprem','Aprem'],'aprem',inplace=True)
             #cast to correct types
             #df2 = df2.astype({'Charge': 'float'}).dtypes
             #remove leading and trailing spaces
@@ -246,8 +249,8 @@ def find_collision(frame):
 
     filter_plannings(frame)
 
-    df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants', 'AM_PM'],keep=False)
-    #df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants'],keep=False)
+    #df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants', 'AM_PM'],keep=False)
+    df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants'],keep=False)
                                                                           
     df_filtered_plannings = df_filtered_plannings[df_filtered_plannings.collision == True]
     # remove from duplicate the following 'Intervenants'
@@ -285,18 +288,29 @@ def find_collision(frame):
 def load_signature(signature_name):
     global signature_code
 
-    sig_files_path = "AppData/Roaming/Microsoft/Signatures/" + signature_name + "_fichiers/"
-    sig_html_path = "AppData/Roaming/Microsoft/Signatures/" + signature_name + '.htm'
+    current_user = os.getlogin()
+    #print (current_user)
+    sig_files_path = "AppData\\Roaming\\Microsoft\\Signatures\\" + signature_name + ' ('+ current_user + '@cesif.fr)_fichiers\\'
+    sig_html_path =  "AppData\\Roaming\\Microsoft\\Signatures\\" +  signature_name + ' ('+ current_user + '@cesif.fr).htm'
+
     signature_path = os.path.join((os.environ['USERPROFILE']),
                                   sig_files_path)  # Finds the path to Outlook signature files with signature name "Work"
     html_doc = os.path.join((os.environ['USERPROFILE']),
                             sig_html_path)  # Specifies the name of the HTML version of the stored signature
-    html_doc = html_doc.replace('\\\\', '\\')
-    html_file = codecs.open(html_doc, 'r', 'utf-8', errors='ignore')
-    signature_code = html_file.read()  # Writes contents of HTML signature file to a string
-    signature_code = signature_code.replace((signature_name + '_fichiers/'),
+    print (signature_path)
+    print (html_doc)
+    #html_doc = html_doc.replace('\\\\', '\\')
+    if os.path.exists(html_doc):
+        html_file = codecs.open(html_doc, 'r', 'utf-8', errors='ignore')
+        signature_code = html_file.read()  # Writes contents of HTML signature file to a string
+        signature_code = signature_code.replace((signature_name + '_fichiers/'),
                                             signature_path)  # Replaces local directory with full directory path
-    html_file.close()
+        html_file.close()
+        print("loaded signature OK")
+    else:
+        print("failed loading signature file " + html_doc)
+
+
 
 
 # -----------------------------------------------------------------------------

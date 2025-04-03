@@ -55,7 +55,7 @@ html_mail = """\
    Merci de me retourner un email pour validation<br>
    
    Bien cordialement<br>
-   Philippe<br><br>
+   <br><br>
 </p>
 </body>
 </html>
