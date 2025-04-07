@@ -11,8 +11,8 @@
  #fuzzy string
 # https://www.datacamp.com/tutorial/fuzzy-string-python
 # pip install thefuzz
-
-titre = "gestion plannings v1.2  03/04/2025 ---- sans signature dans les emails"
+# remove all mail signature stuff....
+titre = "gestion plannings v1.21  07/04/2025 ---- sans signature dans les emails"
 
 import codecs
 import babel
@@ -41,7 +41,6 @@ df = '%a %d/%m/%Y'
 
 
 recipient = ''
-signature_name = 'new'
 
 # Permanently changes the pandas settings
 pd.set_option('display.max_rows', None)
@@ -60,9 +59,9 @@ html_mail = """\
 <p>Bonjour <br>
    Voici, pour confirmation, le planning de vos interventions prévues ensemble<br>
    Merci de me retourner un email pour validation<br>
-   
+   <br>
    Bien cordialement<br>
-   Philippe<br><br>
+<br>
 </p>
 </body>
 </html>
@@ -72,7 +71,6 @@ today = pd.Timestamp.today()
 df_all_plannings = pd.DataFrame()  # all the plannings
 df_filtered_plannings = pd.DataFrame()  # filtered planning
 
-signature_code = str()
 
 
 def load_all_plannings():
@@ -284,32 +282,6 @@ def find_collision(frame):
     return
 
 
-# load signature
-def load_signature(signature_name):
-    global signature_code
-
-    current_user = os.getlogin()
-    #print (current_user)
-    sig_files_path = "AppData\\Roaming\\Microsoft\\Signatures\\" + signature_name + ' ('+ current_user + '@cesif.fr)_fichiers\\'
-    sig_html_path =  "AppData\\Roaming\\Microsoft\\Signatures\\" +  signature_name + ' ('+ current_user + '@cesif.fr).htm'
-
-    signature_path = os.path.join((os.environ['USERPROFILE']),
-                                  sig_files_path)  # Finds the path to Outlook signature files with signature name "Work"
-    html_doc = os.path.join((os.environ['USERPROFILE']),
-                            sig_html_path)  # Specifies the name of the HTML version of the stored signature
-    print (signature_path)
-    print (html_doc)
-    #html_doc = html_doc.replace('\\\\', '\\')
-    if os.path.exists(html_doc):
-        html_file = codecs.open(html_doc, 'r', 'utf-8', errors='ignore')
-        signature_code = html_file.read()  # Writes contents of HTML signature file to a string
-        signature_code = signature_code.replace((signature_name + '_fichiers/'),
-                                            signature_path)  # Replaces local directory with full directory path
-        html_file.close()
-        print("loaded signature OK")
-    else:
-        print("failed loading signature file " + html_doc)
-
 
 
 
@@ -341,7 +313,6 @@ def display_plannings():
 def prepare_email():
     ol = win32com.client.Dispatch("outlook.application")
     olmailitem = 0x0  # size of the new email
-    load_signature(signature_name)
 
     newmail = ol.CreateItem(olmailitem)
     newmail.Subject = 'CESI: Confirmation planning interventions'
@@ -356,7 +327,7 @@ def prepare_email():
         font_family='Open Sans , sans-serif',
         font_size='12px',
         width_dict=['120px', '30px', '20px', '180px', '140px', '60px', '400px'])
-    newmail.HTMLBody = html_mail + html_beautiful_table + " <br><br><br> " + signature_code
+    newmail.HTMLBody = html_mail + html_beautiful_table + " <br><br><br> " 
     # attach='C:\\Users\\admin\\Desktop\\Python\\Sample.xlsx'
     # newmail.Attachments.Add(attach)
     # To display the mail before sending it
