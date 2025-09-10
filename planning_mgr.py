@@ -49,7 +49,8 @@ pd.set_option('display.width', None)
 
 # promos = ('ASR1 23-24', 'ASR2-FFASR 23-24', 'MAALSI 23-25', 'ASR2-FFASR 24-25')
 
-planning_file = r"\\tldata\utilisateurs\Programmes BSMP\Informatique - Numérique\PROMOS\plannings_informatique.xlsx"
+planning_file = r"\\tldata\utilisateurs\Programmes BSMP\Informatique - Numérique\05_PROMOS\20_PILOTAGE\plannings_informatique.xlsx"
+#"Z:\Programmes BSMP\Informatique - Numérique\05_PROMOS\20_PILOTAGE\plannings_informatique.xlsx"
 
 df_plannings = {}
 
