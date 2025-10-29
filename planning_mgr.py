@@ -1,17 +1,22 @@
 # last update: 13/01/2025
 # doc: https://pythonhosted.org/xlrd3/
-# pip install babel pandas tkinter pywin32 pandastable pretty_html_table tkcalendar
 # installer Python pour Windows 64bits: https://www.python.org/downloads/
 # python location: $env:USERPROFILE\AppData\Local\Programs\python\python.exe
 # C:\Users\phofmann\AppData\Local\Programs\python\Python311\python.exe -m venv venv
 # .\venv\Scripts\Activate.ps1
 # python.exe -m pip install --upgrade pip
-# pip install babel pandas pywin32 pandastable pretty_html_table tkcalendar openpyxl numpy
- 
+# libraries: 
+# pip install babel thefuzz pandas numpy pandastable pretty_html_table tkcalendar pywin32 openpyxl
  #fuzzy string
 # https://www.datacamp.com/tutorial/fuzzy-string-python
-# pip install thefuzz
-# remove all mail signature stuff....
+#to make a executable:
+# pip install pyinstaller
+# pyinstaller --onefile --windowed planning_mgr.py
+
+
+
+
+
 titre = "gestion plannings v1.21  07/04/2025 ---- sans signature dans les emails"
 
 import codecs
@@ -96,6 +101,9 @@ def load_all_plannings():
             msg = f"can't find file: {plannings.iloc[i]['fichier']}"
             print(msg)
         else:
+            # Katia utilise "Intervenants principaux" au lieu de "Intervenants"
+            if 'Intervenants principaux' in df1:
+                df1.rename({'Intervenants principaux': 'Intervenants'}, inplace=True, axis='columns')
             # print(df[['Promo', 'AM-PM','Date', 'Charge',  'Intervenants' ,'Réf.', 'Module']])
             if 'Confirmation' in df1:
                 # la colonne 'confirmation' est présente
@@ -114,7 +122,7 @@ def load_all_plannings():
             df2.rename({'AM-PM':'AM_PM'},inplace=True,axis='columns')         #remplace AM-PM par AM_PM
             #normalisation des demies journées
             df2['AM_PM']=df2['AM_PM'].replace(['AM','am','matin','Matin'],'matin')
-            df2['AM_PM']=df2['AM_PM'].replace(['pm','PM','aprem','Aprem'],'aprem')
+            df2['AM_PM']=df2['AM_PM'].replace(['pm','PM','aprem','Aprem','après-midi','Après midi'],'aprem')
             df2['AM_PM']=df2['AM_PM'].replace('','journée')
             #df2.replace(['AM','am','matin','Matin'],'matin',inplace=True)
             #df2.replace(['pm','PM','aprem','Aprem'],'aprem',inplace=True)
@@ -237,51 +245,81 @@ def filter_plannings(frame):
     r.sort()
     # print(r)
     # print(df_filtered_plannings[df_filtered_plannings['Confirmation'] == ''])
-    pt.setRowColors(rows=r, clr='#FFFFE0', cols='all')
+    pt.setRowColors(rows=r, clr='#FFFFE0', cols=[8])
 
     return
 
 
-def find_collision(frame):
+
+# version améliorée de la detection de collisions des plannings
+# largement inspirée par Mistral AI... 
+
+def detecter_collisions(frame):
+    
     global df_filtered_plannings
-    result_df = pd.DataFrame()
-
+    
     filter_plannings(frame)
+    
+    # On filtre les lignes où un intervenant a plusieurs entrées la même journée
+    df_collisions = df_filtered_plannings.copy()
 
-    #df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants', 'AM_PM'],keep=False)
-    df_filtered_plannings['collision'] = df_filtered_plannings.duplicated(subset=['Jour', 'Intervenants'],keep=False)
-                                                                          
-    df_filtered_plannings = df_filtered_plannings[df_filtered_plannings.collision == True]
-    # remove from duplicate the following 'Intervenants'
-    exclude = ['', '?', 'Pilote', 'pilote', 'Autonomie']
-    df_filtered_plannings = df_filtered_plannings[~df_filtered_plannings.Intervenants.isin(exclude)]
-    df_filtered_plannings.sort_values('Date', inplace=True)
-    df_filtered_plannings.reset_index(inplace=True, drop=True)
+    # On crée une colonne 'clef' pour regrouper par date et intervenant
+    df_collisions['clef'] = df_collisions['Date'].astype(str) + "_" + df_collisions['Intervenants']
 
+    # On regroupe par 'clef' et on garde les groupes avec au moins deux entrées
+    groupes = df_collisions.groupby('clef').filter(lambda x: len(x) >= 2)
+
+    # On initialise une liste pour stocker les collisions
+    collisions = []
+    
+    # Pour chaque groupe, on vérifie les chevauchements
+    for _, groupe in groupes.groupby('clef'):
+        n = len(groupe)
+        for i in range(n):
+            for j in range(i+1, n):
+                row1 = groupe.iloc[i]
+                row2 = groupe.iloc[j]
+
+                # Conditions de collision
+                if (row1['AM_PM'] == 'journee' or row2['AM_PM'] == 'journee') or (row1['AM_PM'] == row2['AM_PM']):
+                    collisions.append(row1)
+                    collisions.append(row2)
+
+    # On crée un DataFrame à partir des collisions trouvées
+    df_collisions_final = pd.DataFrame(collisions)
+
+    # On enlève les doublons (car chaque collision est ajoutée deux fois)
+    df_collisions_final = df_collisions_final.drop_duplicates()
+    
+    
+    df_collisions_final.reset_index(inplace=True, drop=True)
+
+    
+    # Grouper les collisions par date et intervenant
+    groupes = df_collisions_final.groupby(['Date', 'Intervenants'])
+    print(groupes)
+    couleurs = ["#81DAF8", "#7BB4F5"]
+    
     pt = Table(frame,
-               dataframe=df_filtered_plannings[
+               dataframe=df_collisions_final[
                    ['Pilote','Jour', 'AM_PM', 'Charge', 'Intervenants', 'Promo', 'Réf.', 'Module', 'Confirmation']],
                showtoolbar=True, showstatusbar=True)
     # set some options
     options = {'colheadercolor': 'blue', 'floatprecision': 1, 'fontsize': 8, 'cellwidth': 40}
     config.apply_options(options, pt)
-    pt.show()
+    
+    pt.show()    
+    
+    # Pour chaque groupe de collision, attribuer une couleur
+    for i, (_, groupe) in enumerate(groupes):
+        clr = couleurs[i % 2]  # Alterne entre bleu et gris par groupe
+        for idx in groupe.index:
+            pt.setRowColors(rows=idx, clr=clr,cols=[1,4])   
 
-    # coloring cells
-    # mask_1 = pt.model.df['Confirmation'] != ''
-    # pt.setColorByMask('Confirmation', mask_1, 'red')
-    df_filtered_plannings.reset_index(inplace=True, drop=True)
-
-    r = ()
-    r = df_filtered_plannings.index[df_filtered_plannings['Confirmation'] == ''].tolist()
-    r.sort()
-    # print(r)
-    # print(df_filtered_plannings[df_filtered_plannings['Confirmation'] == ''])
-    pt.setRowColors(rows=r, clr='#FFFFE0', cols='all')
-    statusLabel.config(text=str(df_filtered_plannings.shape[0]) + " collisions")
+    pt.show()    
+    statusLabel.config(text=str(df_collisions_final.shape[0]) + " collisions")
 
     return
-
 
 
 
@@ -465,7 +503,9 @@ c3 = partial(load_all_plannings)
 reloadButton = Button(f1, text="recharger plannings", activebackground='blue', command=c3)
 reloadButton.place(x=0, y=70)
 
-c4 = partial(find_collision, f2)
+#c4 = partial(find_collision, f2)   #version initiale de la detection de collision
+c4 = partial(detecter_collisions, f2)
+
 findCollisionButton = Button(f1, text="détecter collisions", activebackground='red', command=c4)
 findCollisionButton.place(x=120, y=70)
 

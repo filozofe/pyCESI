@@ -6,3 +6,8 @@ myenv/
 /~WRL1964.tmp
 >>>>>>> 961f8e719ac83833e22c427d3a39c108df705b7a
 /experiment/data
+/build
+/perso
+/gui
+/.venv
+/dist/planning_mgr.exe

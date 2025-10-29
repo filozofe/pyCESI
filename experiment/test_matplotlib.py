@@ -4,7 +4,7 @@ x_values = list(range(11))
 squares = [x**2 for x in x_values]
 cubes = [x**3 for x in x_values]
 
-plt.style.use('seaborn')
+#plt.style.use('seaborn')
 
 fig, axs = plt.subplots(1, 2, sharey=True)
 
